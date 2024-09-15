@@ -6,7 +6,9 @@ import {
   CopyCheckIcon,
   CopyIcon,
   Loader2,
+  Minimize2Icon,
   MinimizeIcon,
+  MinusIcon,
   PlusIcon,
   XIcon,
 } from "lucide-react";
@@ -227,15 +229,12 @@ function SelectedJSXDisplay({
             key={jsx.id}
             jsx={jsx}
             setSelectedJSXs={setSelectedJSXs}
-            inspectedId={inspectedId}
             setInspectedId={setInspectedId}
-            setJSXs={setJSXs}
-            copySuccess={copySuccess}
-            setCopySuccess={setCopySuccess}
+            isInspected={inspectedId === jsx.id}
           />
         ))}
       </div>
-      {inspectedId && (
+      {inspectedId && selectedJSXList.some((jsx) => jsx.id === inspectedId) && (
         <InspectedJSXEditor
           jsx={selectedJSXList.find((jsx) => jsx.id === inspectedId)!}
           setInspectedId={setInspectedId}
@@ -252,14 +251,18 @@ function SelectedJSXItem({
   jsx,
   setSelectedJSXs,
   setInspectedId,
+  isInspected,
 }: {
   jsx: JSX;
   setSelectedJSXs: React.Dispatch<React.SetStateAction<number[]>>;
   setInspectedId: React.Dispatch<React.SetStateAction<number | null>>;
+  isInspected: boolean;
 }) {
   return (
     <div className="group relative min-w-[100px]">
-      <div className="border-2 border-zinc-300 bg-black/10 p-2">
+      <div
+        className={`border-2 border-zinc-300 bg-black/10 p-2 ${isInspected ? "bg/black/20 border-zinc-500" : ""}`}
+      >
         <LiveProvider code={jsx.jsx}>
           <LiveError />
           <LivePreview />
@@ -285,13 +288,13 @@ function JSXItemMenu({
 }) {
   return (
     <div
-      className="menu absolute left-0 top-0 flex size-full cursor-help items-start justify-end pr-1 pt-1 group-hover:visible md:invisible"
+      className="menu absolute left-0 top-0 flex size-full cursor-help items-start justify-end pr-1 pt-1"
       onClick={() =>
         setInspectedId((prev) => (prev === jsx.id ? null : jsx.id))
       }
     >
-      <MinimizeIcon
-        className="size-8 cursor-help bg-white/20 hover:scale-110"
+      <MinusIcon
+        className="size-8 cursor-pointer rounded-lg bg-white/30 hover:scale-110"
         onClick={(e) => {
           setSelectedJSXs((prev) => prev.filter((id) => id !== jsx.id));
           e.stopPropagation();
@@ -315,7 +318,7 @@ function InspectedJSXEditor({
   setCopySuccess: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
-    <div className="relative flex flex-col gap-2 border-zinc-300 bg-black/80">
+    <div className="relative flex flex-col gap-2 border-zinc-300">
       <XIcon
         className="absolute right-2 top-2 size-8 cursor-pointer rounded-md hover:scale-110"
         onClick={() => setInspectedId(null)}
@@ -331,7 +334,7 @@ function InspectedJSXEditor({
           );
         }}
       />
-      <div className="flex justify-end gap-2 p-2">
+      <div className="absolute bottom-0 right-0 flex justify-center gap-2 p-2">
         <CopyButton
           jsx={jsx}
           copySuccess={copySuccess}
@@ -354,13 +357,13 @@ function CopyButton({
   if (copySuccess) {
     return (
       <CopyCheckIcon
-        className={`size-8 scale-110 cursor-none rounded-md text-green-300 transition-all duration-500`}
+        className={`size-8 scale-110 cursor-none rounded-md text-green-700 transition-all duration-500`}
       />
     );
   }
   return (
     <CopyIcon
-      className="size-8 cursor-pointer rounded-md text-white transition-all duration-500 hover:scale-110"
+      className="size-8 cursor-pointer rounded-md text-black transition-all duration-500 hover:scale-110"
       onClick={async () => {
         await navigator.clipboard.writeText(jsx.jsx);
         setCopySuccess(true);
