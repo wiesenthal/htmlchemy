@@ -2,12 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react";
 import {
-  CodeXmlIcon,
   CopyCheckIcon,
   CopyIcon,
   Loader2,
-  Minimize2Icon,
-  MinimizeIcon,
   MinusIcon,
   PlusIcon,
   XIcon,
@@ -88,7 +85,7 @@ function JSXDisplay({
     },
   });
 
-  const deleteSelected = useCallback(async () => {
+  const deleteSelected = useCallback(() => {
     setIsDeleting(true);
     setJSXs((prev) => prev.filter((jsx) => !selectedJSXList.includes(jsx)));
     setSelectedJSXs([]);
