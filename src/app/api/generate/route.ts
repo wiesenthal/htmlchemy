@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { streamObject } from "ai";
 import { schema } from "./schema";
-import { NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
