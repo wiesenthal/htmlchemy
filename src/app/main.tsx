@@ -94,7 +94,7 @@ function JSXDisplay({
 
   const breedSelected = useCallback(() => {
     breed({
-      prompt: `Generate the next (more interesting) JSX in the sequence: ${selectedJSXList
+      prompt: `(Remember this is JSX, so you don't have to render it. Things like styles inside style tags must be wrapped with {\`\`}) Generate the next (more interesting) JSX in the sequence: ${selectedJSXList
         .map((jsx, i) => `v${i}: jsx=\`${jsx.jsx}\``)
         .join("\n")}`,
     });
