@@ -24,7 +24,7 @@ Create react components with AI, and breed them with other components to create 
 
 1. Clone the repository
 2. Install dependencies with `yarn install`
-3. Set up your database and update the connection details in the environment variables
+3. Add your OPENAI_API_KEY to the `.env` file
 4. Run the development server with `yarn dev`
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 

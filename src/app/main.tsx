@@ -121,7 +121,7 @@ function JSXDisplay({
         setSelectedJSXs([]);
       }
     },
-    [JSXs, selectedJSXs, deleteSelected, breedSelected],
+    [JSXs, selectedJSXs, breedSelected, setSelectedJSXs],
   );
 
   useEffect(() => {

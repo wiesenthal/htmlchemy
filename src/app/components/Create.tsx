@@ -4,7 +4,7 @@ import { z } from "zod";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { schema } from "~/app/api/generate/schema";
 import { LoaderCircle } from "lucide-react";
-import { JSX } from "~/app/main";
+import { type JSX } from "~/app/main";
 
 const createJSXSchema = z.object({
   prompt: z.string(),
