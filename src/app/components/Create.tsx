@@ -41,8 +41,8 @@ export function Create({
     submit({
       prompt:
         selectedJSXs.length === 0
-          ? `Generate valid, complete JSX for an element to satisfy the user's whim (JSX, you don't have to render it): ${prompt}`
-          : `Generate the next JSX in the sequence: ${selectedJSXs
+          ? `Generate valid, complete JSX for an element to satisfy the user's whim (Remember this is JSX, so you don't have to render it. Things like styles inside style tags must be wrapped with {\`\`}): ${prompt}`
+          : `Generate valid, complete JSX for an element to satisfy the user's whim (Remember this is JSX, so you don't have to render it. Things like styles inside style tags must be wrapped with {\`\`}), the next in the sequence: ${selectedJSXs
               .map((JSX, i) => `v${i}: jsx=\`${JSX.jsx}\``)
               .join("\n")}
 
@@ -63,7 +63,7 @@ Satisfy the user's whim: ${prompt}`,
                 ? "What do you want?"
                 : "How do you want it to change?"
           }
-          className="rounded-lg border-2 border-zinc-200 p-1 text-black min-w-[300px] md:min-w-[500px]"
+          className="min-w-[300px] rounded-lg border-2 border-zinc-200 p-1 text-black md:min-w-[500px]"
           autoComplete="off"
         />
       </form>
