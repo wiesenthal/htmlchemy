@@ -1,144 +1,262 @@
 "use client";
 
-import { type Agent } from "~/server/db/types";
-import { api } from "~/trpc/react";
-import { Button } from "./components/button";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import { XIcon } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import {
+  CodeXmlIcon,
+  CopyCheckIcon,
+  CopyIcon,
+  Loader2,
+  PlusIcon,
+  XIcon,
+} from "lucide-react";
+import { experimental_useObject as useObject } from "@ai-sdk/react";
+import CodeEditor from "@uiw/react-textarea-code-editor";
+import { LiveProvider, LiveError, LivePreview } from "react-live";
+import { Create } from "./components/Create";
+import { schema } from "./api/generate/schema";
+
+export type JSX = {
+  id: number;
+  jsx: string;
+};
 
 export function MainContent() {
-  const { data: agents, isLoading } = api.agent.getAll.useQuery();
-  return (
-    <div className="flex flex-col items-center gap-4">
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : agents && agents.length > 0 ? (
-        <Agents agents={agents} />
-      ) : (
-        <div>No agents found</div>
-      )}
-      <CreateAgent />
-    </div>
+  const [JSXs, setJSXs] = useState<JSX[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const selectedJSXList = selectedIds.map(
+    (id) => JSXs.find((jsx) => jsx.id === id)!,
   );
-}
-
-function Agents({ agents }: { agents: Agent[] }) {
-  return (
-    <div className="flex flex-row flex-wrap gap-4">
-      {agents.map((agent) => (
-        <Agent key={agent.id} agent={agent} />
-      ))}
-    </div>
-  );
-}
-
-function Agent({ agent }: { agent: Agent }) {
-  const { sinceNow } = useNow();
-  const { mutateAsync: deleteAgent } = api.agent.delete.useMutation();
-  const invalidate = api.useUtils().agent.getAll.invalidate;
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const deleteMe = async () => {
-    setIsDeleting(true);
-    await deleteAgent(agent.id);
-    await invalidate();
-    setIsDeleting(false);
-  };
 
   return (
-    <div key={agent.id} className="flex flex-col gap-2 bg-white/10 p-1">
-      <Button
-        disabled={isDeleting}
-        className="rounded-sm from-slate-50 to-zinc-200"
-      >
-        {agent.prompt}
-      </Button>
-      <div className="flex flex-row items-center justify-between">
-        <div className="text-sm text-gray-300">{sinceNow(agent.createdAt)}</div>
-        <Button
-          disabled={isDeleting}
-          onClick={deleteMe}
-          className="flex size-5 items-center justify-center rounded-sm from-red-200 to-red-300 px-0 py-0 text-center text-xs text-red-900"
-        >
-          <XIcon className="size-4" />
-        </Button>
+    <div className="flex h-full min-h-full flex-col items-center justify-between">
+      <div className="w-full flex-grow">
+        {JSXs.length > 0 ? (
+          <JSXDisplay
+            JSXs={JSXs}
+            setJSXs={setJSXs}
+            selectedJSXs={selectedIds}
+            setSelectedJSXs={setSelectedIds}
+            selectedJSXList={selectedJSXList}
+          />
+        ) : (
+          <div className="text-2xl opacity-40">The input is down there ⬇️</div>
+        )}
+      </div>
+      <div className="absolute bottom-[80px]">
+        <Create selectedJSXs={selectedJSXList} setJSXs={setJSXs} />
       </div>
     </div>
   );
 }
 
-const useNow = () => {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-  const sinceNow = (date: Date, pretty = true) => {
-    const diff = now.getTime() - date.getTime();
-    if (diff < 0) {
-      return "just now";
-    }
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    if (pretty) {
-      return (
-        `${days ? `${days}d ` : ""}${hours % 24 ? `${hours % 24}h ` : ""}${minutes % 60 ? `${minutes % 60}m ` : ""}${seconds % 60 ? `${seconds % 60}s` : ""}`.trim() ||
-        "just now"
-      );
-    }
-    return seconds;
-  };
-  return { now, sinceNow };
-};
-
-const CreateAgentSchema = z.object({
-  prompt: z.string().min(1),
-});
-
-function CreateAgent() {
-  const { mutateAsync: createAgent } = api.agent.create.useMutation();
-  const invalidate = api.useUtils().agent.getAll.invalidate;
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { isValid, isLoading, isSubmitting },
-  } = useForm<z.infer<typeof CreateAgentSchema>>({
-    defaultValues: {
-      prompt: "",
+function JSXDisplay({
+  JSXs,
+  setJSXs,
+  selectedJSXs,
+  setSelectedJSXs,
+  selectedJSXList,
+}: {
+  JSXs: JSX[];
+  setJSXs: React.Dispatch<React.SetStateAction<JSX[]>>;
+  selectedJSXs: number[];
+  setSelectedJSXs: React.Dispatch<React.SetStateAction<number[]>>;
+  selectedJSXList: JSX[];
+}) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [inspectedId, setInspectedId] = useState<number | null>(null);
+  const { submit: breed, isLoading: isBreeding } = useObject({
+    schema,
+    api: "/api/generate",
+    onFinish: async ({ object }) => {
+      if (!object) return;
+      const newButton = {
+        ...object,
+        id: Math.floor(Math.random() * 1000000),
+      };
+      setJSXs((prev) => [...prev, newButton]);
+      setSelectedJSXs([]);
     },
-    resolver: zodResolver(CreateAgentSchema),
   });
 
-  const onSubmit = async (data: { prompt: string }) => {
-    reset();
-    await createAgent(data);
-    await invalidate();
+  const deleteSelected = () => {
+    setIsDeleting(true);
+    setJSXs((prev) => prev.filter((jsx) => !selectedJSXList.includes(jsx)));
+    setSelectedJSXs([]);
+    setIsDeleting(false);
   };
 
+  const breedSelected = () => {
+    breed({
+      prompt: `Generate the next (more interesting) JSX in the sequence: ${selectedJSXList
+        .map((jsx, i) => `v${i}: jsx=\`${jsx.jsx}\``)
+        .join("\n")}`,
+    });
+  };
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key === "a") {
+        event.preventDefault();
+        if (selectedJSXs.length === JSXs.length) {
+          setSelectedJSXs([]);
+        } else {
+          setSelectedJSXs(JSXs.map((jsx) => jsx.id));
+        }
+      }
+      if (event.key === "Backspace") {
+        setSelectedJSXs([]);
+      }
+      if (event.key === "Enter") {
+        breedSelected();
+      }
+      if (event.key === "Escape") {
+        setSelectedJSXs([]);
+      }
+    },
+    [JSXs, selectedJSXs, deleteSelected, breedSelected],
+  );
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (inspectedId && !selectedJSXs.includes(inspectedId)) {
+      setInspectedId(null);
+    }
+  }, [selectedJSXs, inspectedId]);
+
+  const [copySuccess, setCopySuccess] = useState(false);
+
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-row items-center gap-4"
-    >
-      <Button type="submit" disabled={!isValid || isLoading || isSubmitting}>
-        {isLoading ? "Creating..." : "Create Agent"}
-      </Button>
-      <input
-        {...register("prompt")}
-        type="text"
-        placeholder="prompt..."
-        className="rounded-sm border border-gray-300 p-2 text-black"
-        disabled={isLoading || isSubmitting}
-      />
-    </form>
+    <div className="flex flex-col items-center justify-center gap-y-2">
+      <div className="flex flex-row flex-wrap items-center gap-2 text-black dark:text-white">
+        {JSXs.map((jsx) => (
+          <div
+            key={jsx.id}
+            onClick={() => {
+              setSelectedJSXs((prev) => {
+                if (prev.includes(jsx.id)) {
+                  return prev.filter((id) => id !== jsx.id);
+                }
+                return [...prev, jsx.id];
+              });
+            }}
+          >
+            <LiveProvider code={jsx.jsx}>
+              <LiveError />
+              <LivePreview />
+            </LiveProvider>
+          </div>
+        ))}
+      </div>
+      {selectedJSXList.length > 0 && (
+        <div className="margin-auto flex w-full flex-col items-center justify-center gap-y-2 pb-[100px]">
+          <div className="flex scale-75 flex-row gap-2 overflow-x-auto bg-white/60 p-4">
+            {selectedJSXList.map((jsx) => (
+              <div className="group relative min-w-[100px]" key={jsx.id}>
+                <div className="border-2 border-zinc-300 bg-black/10 p-2">
+                  <LiveProvider code={jsx.jsx}>
+                    <LiveError />
+                    <LivePreview />
+                  </LiveProvider>
+                </div>
+                <div
+                  className="menu absolute left-0 top-0 flex size-full cursor-not-allowed items-start justify-end pr-1 pt-1 group-hover:visible md:invisible"
+                  onClick={() =>
+                    setSelectedJSXs((prev) =>
+                      prev.filter((id) => id !== jsx.id),
+                    )
+                  }
+                >
+                  <CodeXmlIcon
+                    className="size-8 cursor-help bg-white/20 hover:scale-110"
+                    onClick={(e) => {
+                      setInspectedId((prev) =>
+                        prev === jsx.id ? null : jsx.id,
+                      );
+                      e.stopPropagation();
+                    }}
+                  />
+                </div>
+                {inspectedId === jsx.id ? (
+                  <div className="relative flex flex-col gap-2 border-zinc-300 bg-black/80">
+                    <XIcon
+                      className="absolute right-2 top-2 size-8 cursor-pointer rounded-md hover:scale-110"
+                      onClick={() => setInspectedId(null)}
+                    />
+
+                    <CodeEditor
+                      value={jsx.jsx}
+                      language="jsx"
+                      onChange={(e) => {
+                        setJSXs((prev) =>
+                          prev.map((jsx) =>
+                            jsx.id === inspectedId
+                              ? { ...jsx, jsx: e.target.value }
+                              : jsx,
+                          ),
+                        );
+                      }}
+                    />
+                    <div className="flex justify-end gap-2 p-2">
+                      {copySuccess ? (
+                        <CopyCheckIcon
+                          className={`size-8 scale-110 cursor-none rounded-md text-green-300 transition-all duration-500`}
+                        />
+                      ) : (
+                        <CopyIcon
+                          className="size-8 cursor-pointer rounded-md text-white transition-all duration-500 hover:scale-110"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(jsx.jsx);
+                            setCopySuccess(true);
+                            setTimeout(() => setCopySuccess(false), 1000);
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-row gap-2">
+            <button
+              className="flex size-8 items-center justify-center rounded-full bg-red-500 p-1 text-white hover:bg-red-600 disabled:opacity-50 disabled:hover:bg-red-500"
+              onClick={deleteSelected}
+              disabled={isDeleting || isBreeding}
+            >
+              {isDeleting ? (
+                <Loader2 className="size-8 animate-spin" />
+              ) : isBreeding ? null : (
+                <XIcon className="size-8" />
+              )}
+            </button>
+            <button
+              className="flex size-8 items-center justify-center rounded-full bg-green-500 p-1 text-white hover:bg-green-600 disabled:opacity-50 disabled:hover:bg-green-500"
+              onClick={breedSelected}
+              disabled={isDeleting || isBreeding}
+            >
+              {isBreeding ? (
+                <Loader2 className="size-8 animate-spin" />
+              ) : isDeleting ? null : (
+                <PlusIcon className="size-8" />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

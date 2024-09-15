@@ -1,6 +1,6 @@
-# Persuagents
+# HTMLchemy
 
-Persuagents is a project created during the Agents UX hackathon at AGI House on September 14, 2024.
+HTMLchemy is a project created during the Agents UX hackathon at AGI House on September 14, 2024.
 
 ## Tech Stack
 
