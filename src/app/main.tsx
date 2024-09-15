@@ -220,7 +220,7 @@ function SelectedJSXDisplay({
 }) {
   return (
     <div className="margin-auto flex w-full flex-col items-center justify-center gap-y-2">
-      <div className="flex scale-75 flex-row gap-2 overflow-x-auto bg-white/60 p-4">
+      <div className="flex scale-75 flex-row gap-2 flex-wrap bg-white/60 p-4">
         {selectedJSXList.map((jsx) => (
           <SelectedJSXItem
             key={jsx.id}
