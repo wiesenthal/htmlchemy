@@ -1,31 +1,32 @@
 # HTMLchemy
 
-HTMLchemy is a project created during the Agents UX hackathon at AGI House on September 14, 2024.
+HTMLchemy is a project created during the Agents UX hackathon at the Hillsborough AGI House on September 14, 2024.
+
+Live at https://htmlchemy.com
+
+## Screenshot
+
+![alt text](image.png)
+
+## Functionality
+
+Create react components with AI, and breed them with other components to create new versions to your liking.
 
 ## Tech Stack
 
 - Next.js
 - React
 - TypeScript
-- tRPC
-- Drizzle ORM
-- Zod
 - Tailwind CSS
+- OpenAI API
 
 ## Getting Started
 
 1. Clone the repository
-2. Install dependencies with `npm install`
+2. Install dependencies with `yarn install`
 3. Set up your database and update the connection details in the environment variables
-4. Run the development server with `npm run dev`
+4. Run the development server with `yarn dev`
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Project Structure
-
-- `src/app`: Next.js app router components
-- `src/server`: Backend logic, including tRPC routers and Drizzle ORM schema
-- `src/styles`: Global CSS styles
-- `src/trpc`: tRPC client setup
 
 ## Contributing
 
